@@ -1,19 +1,19 @@
-#python Alarm Clock
 import os
 import time
 import datetime
-from pygame import mixer
 import threading
-import pygame
+from pygame import mixer
+
+mixer.init()
 
 
-mixer.init() # thởi động cái động cơ âm thanh (audio engine))
 def wait_for_input():
     global alarm_active
     input()
     alarm_active = False
     mixer.music.stop()
     print("\n🔔 Báo thức đã dừng! Stop the alarm! Have a great day, ông bạn!")
+
 
 def parse_alarm_time(alarm_time):
     text = alarm_time.strip()
@@ -25,10 +25,10 @@ def parse_alarm_time(alarm_time):
     elif len(parts) == 3:
         hour, minute, second = map(int, parts)
     else:
-        raise ValueError("Định dạng thời gian không hợp lệ. Hãy dùng HH:MM hoặc HH:MM:SS")
+        raise ValueError("❌ Error: Invalid format! Hãy dùng HH:MM hoặc HH:MM:SS")
 
     if not (0 <= hour <= 23 and 0 <= minute <= 59 and 0 <= second <= 59):
-        raise ValueError("Giá trị giờ/phút/giây không hợp lệ")
+        raise ValueError("❌ Error: Invalid values! Giá trị giờ/phút/giây không hợp lệ")
 
     return datetime.time(hour, minute, second)
 
@@ -39,15 +39,16 @@ def set_alarm(alarm_time):
     try:
         target_time = parse_alarm_time(alarm_time)
     except ValueError as e:
-        print(e) # báo lỗi
+        print(e)
         return
+
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    sound_file= os.path.join(script_dir, "doki_doki.mp3")
+    sound_file = os.path.join(script_dir, "doki_doki.mp3")
 
     if not os.path.exists(sound_file):
         print(f"❌ Error: File not found! Không tìm thấy file tại: {sound_file}")
         return
-    
+
     mixer.music.load(sound_file)
     print(f"⏰ Alarm set for: {target_time}. Monitoring time... Đang theo dõi...")
 
@@ -59,14 +60,14 @@ def set_alarm(alarm_time):
         target_dt = datetime.datetime.combine(now.date(), target_time)
         print(f"⏱️ Current Time: {now.strftime('%H:%M:%S')}", end="\r")
 
-        if now >=  target_dt and not alarm_triggered:
+        if now >= target_dt and not alarm_triggered:
             print("\n🚨 WAKE UP!!! DẬY ĐI ÔNG BẠN ƠI!!! 🚨")
             print("👉 Press [ENTER] to turn off the alarm / Nhấn Enter để tắt nhạc.")
 
             mixer.music.play(-1)
             alarm_triggered = True
 
-            input_thread = threading.Thread(target=wait_for_input, daemon= True)
+            input_thread = threading.Thread(target=wait_for_input, daemon=True)
             input_thread.start()
 
         if alarm_triggered and not alarm_active:
@@ -76,6 +77,5 @@ def set_alarm(alarm_time):
 
 
 if __name__ == "__main__":
-    alarm_time = input("Enter the alarm time(HH:MM or HH:MM:SS): ")
+    alarm_time = input("Enter alarm time / Nhập thời gian báo thức (HH:MM or HH:MM:SS): ")
     set_alarm(alarm_time)
-
