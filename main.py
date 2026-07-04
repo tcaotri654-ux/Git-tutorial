@@ -2,9 +2,18 @@
 import os
 import time
 import datetime
-import pygame
+from pygame import mixer
 import threading
+import pygame
 
+
+mixer.init() # thởi động cái động cơ âm thanh (audio engine))
+def wait_for_input():
+    global alarm_active
+    input()
+    alarm_active = False
+    mixer.music.stop()
+    print("\n🔔 Báo thức đã dừng! Stop the alarm! Have a great day, ông bạn!")
 
 def parse_alarm_time(alarm_time):
     text = alarm_time.strip()
@@ -25,51 +34,44 @@ def parse_alarm_time(alarm_time):
 
 
 def set_alarm(alarm_time):
-    print(f"Alarm set for {alarm_time}")
+    global alarm_active
 
     try:
         target_time = parse_alarm_time(alarm_time)
-    except ValueError as err:
-        print(err)
+    except ValueError as e:
+        print(e) # báo lỗi
         return
-
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    sound_file = os.path.join(script_dir, "doki_doki.mp3")
+    sound_file= os.path.join(script_dir, "doki_doki.mp3")
 
     if not os.path.exists(sound_file):
-        print(f"Sound file not found: {sound_file}")
+        print(f"❌ Error: File not found! Không tìm thấy file tại: {sound_file}")
         return
+    
+    mixer.music.load(sound_file)
+    print(f"⏰ Alarm set for: {target_time}. Monitoring time... Đang theo dõi...")
+
+    alarm_triggered = False
+    alarm_active = True
 
     while True:
         now = datetime.datetime.now()
         target_dt = datetime.datetime.combine(now.date(), target_time)
+        print(f"⏱️ Current Time: {now.strftime('%H:%M:%S')}", end="\r")
 
-        if target_dt <= now:
-            print("Wake Up!")
-            print("Press Enter to stop the alarm clock")
+        if now >=  target_dt and not alarm_triggered:
+            print("\n🚨 WAKE UP!!! DẬY ĐI ÔNG BẠN ƠI!!! 🚨")
+            print("👉 Press [ENTER] to turn off the alarm / Nhấn Enter để tắt nhạc.")
 
-            pygame.mixer.init()
-            pygame.mixer.music.load(sound_file)
+            mixer.music.play(-1)
+            alarm_triggered = True
 
-            alarm_active = True
-
-            def wait_for_input():
-                nonlocal alarm_active
-                input()
-                alarm_active = False
-                pygame.mixer.music.stop()
-                print("Alarm stopped!")
-
-            input_thread = threading.Thread(target=wait_for_input, daemon=True)
+            input_thread = threading.Thread(target=wait_for_input, daemon= True)
             input_thread.start()
 
-            while alarm_active:
-                if not pygame.mixer.music.get_busy():
-                    pygame.mixer.music.play(-1)
-                time.sleep(0.1)
+        if alarm_triggered and not alarm_active:
             break
 
-        print(now.strftime("%H:%M:%S"))
         time.sleep(1)
 
 
